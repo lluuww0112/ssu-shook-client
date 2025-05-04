@@ -288,8 +288,11 @@
             <button class="button" onclick="cancelFeePublication()">
               발행 취소
             </button>
-            <button class="button" onclick="togglePaymentStatus()">
-              납부 상태 전환
+            <button class="button" onclick="togglePaymentStatus(1)">
+              납부 완료 상태로 전환
+            </button>
+            <button class="button" onclick="togglePaymentStatus(0)">
+              미납 상태로 전환
             </button>
           </div>
           <!-- 회비 정보 테이블 -->
@@ -677,33 +680,54 @@
         }
       }
 
-      async function togglePaymentStatus() {
+      async function togglePaymentStatus(state) {
+        const userName = localStorage.getItem("userName");
+        const clubName = localStorage.getItem("club");
         const selectedCheckboxes = document.querySelectorAll(
           "#feeTableList input[type='checkbox']:checked"
         );
-        const selectedIDs = Array.from(selectedCheckboxes).map(
-          (checkbox) => checkbox.dataset.userId
-        );
 
-        if (selectedIDs.length === 0) {
+        if (selectedCheckboxes.length === 0) {
           alert("납부 상태를 전환할 회원을 선택해주세요.");
           return;
         }
 
+        const selectedIDs = [];
+        const publications = [];
+
+        selectedCheckboxes.forEach((checkbox) => {
+          const row = checkbox.closest("tr");
+          const userId = checkbox.dataset.userId;
+          const publicationDate = row
+            .querySelector("td:nth-child(5)")
+            .textContent.trim();
+          const formattedDate = publicationDate
+            .replace(/\.\s/g, "-")
+            .replace(/\.$/, ""); // YYYY-MM-DD 형식으로 변환
+          selectedIDs.push(userId);
+          publications.push(formattedDate);
+        });
+
         try {
           const response = await fetch(
-            "http://127.0.0.1:3000/crew/toggle_payment",
+            "http://127.0.0.1:3000/crew/fee_publish/complete",
             {
-              method: "POST",
+              method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ IDs: selectedIDs }),
+              body: JSON.stringify({
+                ID: userName,
+                club_name: clubName,
+                IDs: selectedIDs,
+                publications: publications,
+                state: state,
+              }),
             }
           );
 
           const data = await response.json();
 
           if (data.status === 1) {
-            alert("납부 상태가 성공적으로 전환되었습니다.");
+            alert(data.message || "납부 상태가 성공적으로 전환되었습니다.");
             fetchFeeTable(); // 테이블 갱신
           } else {
             alert(data.message || "납부 상태 전환 중 오류가 발생했습니다.");
