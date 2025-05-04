@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>동아리 활동 내역</title>
+    <style>
+        :root {
+            --primary: #4b4b8f;
+            --primary-light: #6c6ca5;
+            --secondary: #a8dadc;
+            --accent: #ff6b6b;
+            --background: #f8f9fa;
+            --text: #333;
+            --text-light: #666;
+            --white: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--secondary);
+            background-image: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                linear-gradient(225deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+                linear-gradient(315deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%);
+            background-position: 10px 0, 10px 0, 0 0, 0 0;
+            background-size: 20px 20px;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .container.panel-open {
+            margin-right: 500px;
+        }
+
+        @media (max-width: 1200px) {
+            .container.panel-open {
+                margin-right: 0;
+                max-width: calc(100% - 550px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .container.panel-open {
+                display: none;
+            }
+
+            #postDetailPanel {
+                width: 100%;
+                right: -100%;
+            }
+
+            #postDetailPanel.open {
+                right: 0;
+            }
+
+            .post-list {
+                padding: 15px;
+                gap: 12px;
+            }
+
+            .post-card {
+                height: 130px;
+                padding: 15px 20px;
+            }
+
+            .post-list.panel-open .post-card {
+                max-width: 100%;
+            }
+        }
+
+        h2 {
+            text-align: center;
+            margin: 20px 0 30px;
+            color: var(--primary);
+            font-size: 32px;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 2px;
+        }
+
+        .post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .post-list.panel-open {
+            max-width: 900px;
+            grid-template-columns: 1fr;
+        }
+
+        .post-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 95px;
+            width: 100%;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .post-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(0,0,0,0);
+        }
+
+        .post-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .post-title {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            color: var(--primary);
+            font-weight: 600;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-text {
+            color: var(--text-light);
+            margin: 0;
+            font-size: 12px;
+            line-height: 1.3;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .post-type {
+            background: var(--primary-light);
+            color: var(--white);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .post-date {
+            color: var(--text-light);
+            font-size: 11px;
+        }
+
+        #my-club-list {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            left: -220px;
+            width: 220px;
+            height: auto;
+            max-height: 90vh;
+            background: var(--white);
+            box-shadow: none;
+            padding: 20px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1001;
+            border-radius: 0 12px 12px 0;
+        }
+
+        #my-club-list::after {
+            content: '👉';
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        #my-club-list:hover {
+            left: 0;
+            box-shadow: var(--shadow-hover);
+            overflow-y: auto;
+        }
+
+        #my-club-list .menu-content {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        #my-club-list:hover .menu-content {
+            opacity: 1;
+        }
+
+        #my-club-list h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: var(--primary);
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 8px;
+        }
+
+        #my-club-list h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        #my-club-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px 0;
+        }
+
+        #my-club-list li {
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+            font-size: 14px;
+        }
+
+        #my-club-list li:hover {
+            transform: translateX(5px);
+        }
+
+        #my-club-list li a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: rgba(75, 75, 143, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        #my-club-list li a:hover {
+            background: rgba(75, 75, 143, 0.1);
+            color: var(--primary-light);
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+        }
+
+        #my-club-list:hover ~ #overlay {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #panel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+        }
+
+        #panel-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .welcome {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: var(--white);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        #logoutButton {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        #logoutButton:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        /* 상세 보기 패널 스타일 */
+        #postDetailPanel {
+            position: fixed;
+            top: 0;
+            right: -600px;
+            width: 550px;
+            height: 100vh;
+            background: var(--white);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            padding: 40px;
+            overflow-y: auto;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+
+        #postDetailPanel.open {
+            right: 0;
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .detail-close:hover {
+            background: rgba(0,0,0,0.05);
+            color: var(--primary);
+        }
+
+        .detail-title {
+            font-size: 28px;
+            color: var(--primary);
+            margin-bottom: 25px;
+            padding-right: 40px;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+
+        .detail-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 12px;
+        }
+
+        .detail-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-meta-item span:first-child {
+            font-size: 13px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .detail-meta-item span:last-child {
+            font-size: 15px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .detail-content {
+            line-height: 1.8;
+            color: var(--text);
+            font-size: 16px;
+            white-space: pre-line;
+            margin-bottom: 30px;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+    </style>
+</head>
+<body>
+    <div id="my-club-list">
+        <div class="menu-content">
+            <div class="welcome" id="welcomeMessage"></div>
+            <h3>내 동아리</h3>
+            <ul>
+                <!-- 동아리 목록이 여기에 동적으로 추가됩니다 -->
+            </ul>
+            <h3>기능 메뉴</h3>
+            <ul>
+                <li><a href="../clubs">✨ 맞춤형 동아리 추천 및 리뷰</a></li>
+                <li><a href="../activity">📌 동아리별 활동 내역</a></li>
+                <li><a href="../NewClub">🆕 신규 동아리 개설 인원 모집</a></li>
+                <li><a href="../recruiting">📣 동아리 모집 공고</a></li>
+            </ul>
+            <button id="logoutButton">로그아웃</button>
+        </div>
+    </div>
+
+    <div id="overlay"></div>
+    <div id="panel-overlay"></div>
+
+    <div class="container">
+        <h2>동아리 활동 내역</h2>
+        <div class="post-list" id="postList">
+            <!-- 게시글이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <div id="postDetailPanel">
+        <button class="detail-close">&times;</button>
+        <h2 class="detail-title"></h2>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <span>📅 활동일:</span>
+                <span class="detail-activity-day"></span>
+            </div>
+            <div class="detail-meta-item">
+                <span>📝 게시일:</span>
+                <span class="detail-added"></span>
+            </div>
+            <div class="detail-meta-item">
+                <span>🏷️ 종류:</span>
+                <span class="detail-type"></span>
+            </div>
+            <div class="detail-meta-item">
+                <span>✏️ 최종수정:</span>
+                <span class="detail-updated"></span>
+            </div>
+        </div>
+        <div class="detail-content"></div>
+        <img class="detail-image" style="display: none;">
+    </div>
+
+    <script>
+        async function fetchPosts() {
+            try {
+                const clubName = localStorage.getItem("club");
+                
+                if (!clubName) {
+                    console.error("클럽 이름이 localStorage에 없습니다.");
+                    const postList = document.getElementById("postList");
+                    postList.innerHTML = `
+                        <div style="
+                            text-align: center;
+                            padding: 40px 20px;
+                            background: var(--white);
+                            border-radius: 16px;
+                            box-shadow: var(--shadow);
+                            grid-column: 1 / -1;
+                            margin: 20px auto;
+                            max-width: 500px;
+                        ">
+                            <h3 style="color: var(--text); margin-bottom: 10px;">잘못된 접근입니다</h3>
+                            <p style="color: var(--text-light); margin: 0;">동아리를 선택한 후 다시 시도해주세요.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log("서버에 요청 보내는 중...", {
+                    club_name: clubName,
+                    post_type: "activity"
+                });
+
+                const response = await fetch("http://127.0.0.1:3000/user/get_posts", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        club_name: clubName,
+                        post_type: "activity"
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("서버 응답 데이터:", data);
+
+                if (data.status === 1) {
+                    const postList = document.getElementById("postList");
+                    postList.innerHTML = ""; // 기존 내용 초기화
+
+                    if (data.results === "게시글이 조회되지 않았습니다") {
+                        const emptyMessage = document.createElement("div");
+                        emptyMessage.className = "empty-message";
+                        emptyMessage.innerHTML = `
+                            <div style="
+                                text-align: center;
+                                padding: 40px 20px;
+                                background: var(--white);
+                                border-radius: 16px;
+                                box-shadow: var(--shadow);
+                                grid-column: 1 / -1;
+                                margin: 20px auto;
+                                max-width: 500px;
+                            ">
+                                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" 
+                                     alt="빈 활동 내역" 
+                                     style="width: 100px; height: 100px; margin-bottom: 20px; opacity: 0.5;">
+                                <h3 style="color: var(--text); margin-bottom: 10px;">아직 등록된 활동 내역이 없습니다</h3>
+                                <p style="color: var(--text-light); margin: 0;">새로운 활동이 등록되면 이곳에 표시됩니다.</p>
+                            </div>
+                        `;
+                        postList.appendChild(emptyMessage);
+                        return;
+                    }
+
+                    data.results.forEach(post => {
+                        const postCard = document.createElement("div");
+                        postCard.className = "post-card";
+                        postCard.dataset.postId = post.post_ID;
+
+                        // 날짜 포맷팅
+                        const addedDate = new Date(post.added);
+                        const formattedDate = addedDate.toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+
+                        postCard.innerHTML = `
+                            <h3 class="post-title">${post.title}</h3>
+                            <p class="post-text">${post.text}</p>
+                            <div class="post-meta">
+                                <span class="post-type">${post.post_type}</span>
+                                <span class="post-date">${formattedDate}</span>
+                            </div>
+                        `;
+
+                        postList.appendChild(postCard);
+
+                        // 클릭 이벤트 추가
+                        postCard.addEventListener("click", () => fetchPostDetail(post.post_ID));
+                    });
+                } else {
+                    alert("게시글을 불러오는데 실패했습니다.");
+                }
+            } catch (error) {
+                console.error("Error details:", error);
+                const postList = document.getElementById("postList");
+                postList.innerHTML = `
+                    <div style="
+                        text-align: center;
+                        padding: 40px 20px;
+                        background: var(--white);
+                        border-radius: 16px;
+                        box-shadow: var(--shadow);
+                        grid-column: 1 / -1;
+                        margin: 20px auto;
+                        max-width: 500px;
+                    ">
+                        <h3 style="color: var(--text); margin-bottom: 10px;">데이터를 불러오는 중 오류가 발생했습니다</h3>
+                        <p style="color: var(--text-light); margin: 0;">잠시 후 다시 시도해주세요.</p>
+                        <p style="color: var(--text-light); margin-top: 10px; font-size: 12px;">오류 내용: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function fetchMyClubs() {
+            try {
+                const userName = localStorage.getItem("userName");
+                const response = await fetch(
+                    `http://127.0.0.1:3000/user/get_my_club/${userName}`
+                );
+                const data = await response.json();
+
+                if (data.status === 1) {
+                    const myClubList = document.querySelector("#my-club-list ul");
+                    myClubList.innerHTML = ""; // 기존 내용을 초기화
+
+                    data.results.forEach((club) => {
+                        const li = document.createElement("li");
+                        li.innerHTML = `
+                            <strong>${club.club_name}</strong><br>
+                            <span style="font-size: 14px; color: gray;">${club.category}</span>
+                        `;
+                        li.style.cursor = "pointer";
+                        li.addEventListener("click", () => {
+                            localStorage.setItem("club", club.club_name);
+                            window.location.href = "../clubs/club";
+                        });
+                        myClubList.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                console.error("내 동아리 정보 요청 중 오류 발생:", error);
+            }
+        }
+
+        document.getElementById("logoutButton").addEventListener("click", () => {
+            localStorage.clear();
+            window.location.href = "../";
+        });
+
+        // 페이지 로드 시 실행
+        document.addEventListener("DOMContentLoaded", () => {
+            const userName = localStorage.getItem("userName");
+            if (userName) {
+                document.getElementById("welcomeMessage").textContent = `👋 ${userName}님 환영합니다!`;
+            }
+            fetchMyClubs();
+            fetchPosts();
+        });
+
+        // 5초마다 자동으로 새로고침
+        // setInterval(fetchPosts, 5000);
+
+        // 게시물 상세 정보를 가져오는 함수
+        async function fetchPostDetail(postId) {
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/user/get_posts/${postId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("서버 응답 데이터:", data);
+                displayPostDetail(data);
+            } catch (error) {
+                console.error("게시물 상세 정보 조회 중 오류 발생:", error);
+                alert("게시물 상세 정보를 불러오는데 실패했습니다.");
+            }
+        }
+
+        // 게시물 상세 정보를 표시하는 함수
+        function displayPostDetail(data) {
+            if (data.status != 1 || !data.result) {
+                console.error("유효하지 않은 응답 데이터:", data);
+                alert("게시물 상세 정보를 불러오는데 실패했습니다.");
+                return;
+            }
+
+            const post = data.result;
+            const panel = document.getElementById("postDetailPanel");
+            const overlay = document.getElementById("panel-overlay");
+            
+            // 데이터 채우기
+            panel.querySelector(".detail-title").textContent = post.title;
+            panel.querySelector(".detail-activity-day").textContent = formatDate(post.activity_day);
+            panel.querySelector(".detail-added").textContent = formatDate(post.added);
+            panel.querySelector(".detail-type").textContent = post.post_type;
+            panel.querySelector(".detail-updated").textContent = post.updated ? formatDate(post.updated) : "수정되지 않음";
+            panel.querySelector(".detail-content").textContent = post.text;
+
+            // 이미지 처리
+            const imageElement = panel.querySelector(".detail-image");
+            if (post.activity_image) {
+                imageElement.src = post.activity_image;
+                imageElement.style.display = "block";
+            } else {
+                imageElement.style.display = "none";
+            }
+
+            // 패널과 오버레이 열기
+            requestAnimationFrame(() => {
+                panel.classList.add("open");
+                overlay.classList.add("open");
+            });
+        }
+
+        // 날짜 포맷팅 함수
+        function formatDate(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // 닫기 버튼 이벤트 리스너
+        document.querySelector(".detail-close").addEventListener("click", () => {
+            const panel = document.getElementById("postDetailPanel");
+            const overlay = document.getElementById("panel-overlay");
+            panel.classList.remove("open");
+            overlay.classList.remove("open");
+        });
+
+        // ESC 키로 패널 닫기
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                const panel = document.getElementById("postDetailPanel");
+                const overlay = document.getElementById("panel-overlay");
+                panel.classList.remove("open");
+                overlay.classList.remove("open");
+            }
+        });
+
+        // 패널 외부 클릭 시 닫기
+        document.addEventListener("click", (e) => {
+            const panel = document.getElementById("postDetailPanel");
+            const overlay = document.getElementById("panel-overlay");
+            const isClickInside = panel.contains(e.target);
+            const isClickOnCard = e.target.closest(".post-card");
+            
+            if (!isClickInside && !isClickOnCard && panel.classList.contains("open")) {
+                panel.classList.remove("open");
+                overlay.classList.remove("open");
+            }
+        });
+    </script>
+</body>
+</html>

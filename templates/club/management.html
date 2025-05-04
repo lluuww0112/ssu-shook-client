@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>동아리 관리</title>
+    <link rel="stylesheet" href="../home/style.css" />
+    <style>
+      :root {
+        --primary: #4b4b8f;
+        --primary-light: #6c6ca5;
+        --secondary: #a8dadc;
+        --accent: #ff6b6b;
+        --background: #f8f9fa;
+        --text: #333;
+        --text-light: #666;
+        --white: #ffffff;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      body {
+        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background: var(--secondary);
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      h1 {
+        text-align: center;
+        color: var(--primary);
+        margin-bottom: 20px;
+      }
+
+      .section {
+        margin-bottom: 30px;
+      }
+
+      .section h2 {
+        font-size: 20px;
+        color: var(--primary);
+        margin-bottom: 15px;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 5px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 10px 15px;
+        background: var(--primary);
+        color: var(--white);
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .button:hover {
+        background: var(--primary-light);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      table th,
+      table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      table th {
+        background: var(--primary-light);
+        color: var(--white);
+      }
+
+      table tr:nth-child(even) {
+        background: #f9f9f9;
+      }
+
+      table tr:hover {
+        background: #f1f1f1;
+      }
+
+      .nav-tabs {
+        display: flex;
+        justify-content: center;
+        background: var(--primary);
+        padding: 10px 0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .nav-tabs a {
+        color: var(--white);
+        text-decoration: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: 500;
+        transition: background 0.3s ease, color 0.3s ease;
+        border-radius: 8px;
+        margin: 0 5px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .nav-tabs a::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--primary-light);
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease;
+      }
+
+      .nav-tabs a:hover::before,
+      .nav-tabs a.active::before {
+        transform: scaleX(1);
+        transform-origin: left;
+      }
+
+      .tab-content {
+        display: none;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      .tab-content.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>동아리 관리</h1>
+
+      <!-- 네비게이션 탭 -->
+      <div class="nav-tabs">
+        <a href="#postTab" class="active" onclick="showTab(event, 'postTab')"
+          >게시물 작성</a
+        >
+        <a href="#memberTab" onclick="showTab(event, 'memberTab')">회원 관리</a>
+        <a href="#feeTab" onclick="showTab(event, 'feeTab')">회비 관리</a>
+      </div>
+
+      <!-- 게시물 작성 -->
+      <div id="postTab" class="tab-content active">
+        <div class="section">
+          <h2>게시물 작성</h2>
+          <textarea
+            id="postContent"
+            rows="5"
+            style="
+              width: 100%;
+              padding: 10px;
+              border-radius: 8px;
+              border: 1px solid #ddd;
+            "
+          ></textarea>
+          <button class="button" onclick="submitPost()">게시</button>
+        </div>
+      </div>
+
+      <!-- 회원 관리 -->
+      <div id="memberTab" class="tab-content">
+        <div class="section">
+          <h2>회원 정보 조회</h2>
+          <!-- 검색창 -->
+          <input
+            type="text"
+            id="memberSearch"
+            placeholder="회원 이름, 이메일, 직책 등으로 검색"
+            style="
+              width: 50%;
+              padding: 8px;
+              margin-bottom: 15px;
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              font-size: 14px;
+            "
+            oninput="filterMembers()"
+          />
+          <!-- 회비 발행 입력 및 버튼 -->
+          <div style="margin-bottom: 15px">
+            <label for="feeAmount" style="margin-right: 10px">회비 금액:</label>
+            <input
+              type="number"
+              id="feeAmount"
+              placeholder="회비 금액 입력"
+              style="
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 14px;
+                width: 150px;
+              "
+            />
+            <button class="button" onclick="publishFees()">회비 발행</button>
+          </div>
+          <!-- 회원 정보 테이블 -->
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    id="selectAll"
+                    onclick="toggleSelectAll()"
+                  />
+                </th>
+                <th>이름</th>
+                <th>이메일</th>
+                <th>직책</th>
+                <th>부서</th>
+                <th>단과대</th>
+                <th>전공</th>
+                <th>학년</th>
+                <th>학번</th>
+                <th>전화번호</th>
+              </tr>
+            </thead>
+            <tbody id="memberList">
+              <!-- 동아리원 정보가 동적으로 추가됩니다 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 회비 관리 -->
+      <div id="feeTab" class="tab-content">
+        <div class="section">
+          <h2>회비 납부 및 상태 확인</h2>
+          <!-- 발행일 기준 재조회 -->
+          <div style="margin-bottom: 15px">
+            <label for="publicationDate" style="margin-right: 10px"
+              >발행일:</label
+            >
+            <input
+              type="date"
+              id="publicationDate"
+              style="
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 14px;
+              "
+            />
+            <button class="button" onclick="fetchFeeTable()">재조회</button>
+          </div>
+          <!-- 검색창 -->
+          <input
+            type="text"
+            id="feeSearch"
+            placeholder="회원 이름으로 검색"
+            style="
+              width: 50%;
+              padding: 8px;
+              margin-bottom: 15px;
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              font-size: 14px;
+            "
+            oninput="filterFeeTable()"
+          />
+          <!-- 발행 취소 및 납부 상태 전환 버튼 -->
+          <div style="margin-bottom: 15px">
+            <button class="button" onclick="cancelFeePublication()">
+              발행 취소
+            </button>
+            <button class="button" onclick="togglePaymentStatus()">
+              납부 상태 전환
+            </button>
+          </div>
+          <!-- 회비 정보 테이블 -->
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    id="selectAllFee"
+                    onclick="toggleSelectAllFee()"
+                  />
+                </th>
+                <th>이름</th>
+                <th>회비</th>
+                <th>납부 상태</th>
+                <th>발행일</th>
+              </tr>
+            </thead>
+            <tbody id="feeTableList">
+              <!-- 회비 정보가 동적으로 추가됩니다 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showTab(event, tabId) {
+        event.preventDefault();
+        const tabs = document.querySelectorAll(".tab-content");
+        const links = document.querySelectorAll(".nav-tabs a");
+
+        tabs.forEach((tab) => {
+          tab.classList.remove("active");
+        });
+
+        links.forEach((link) => {
+          link.classList.remove("active");
+        });
+
+        setTimeout(() => {
+          document.getElementById(tabId).classList.add("active");
+        }, 10); // 애니메이션 효과를 위해 약간의 지연 추가
+
+        event.target.classList.add("active");
+      }
+
+      async function submitPost() {
+        const content = document.getElementById("postContent").value;
+        if (!content.trim()) {
+          alert("내용을 입력해주세요.");
+          return;
+        }
+
+        try {
+          const response = await fetch("http://127.0.0.1:3000/club/post", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          });
+          const data = await response.json();
+          if (data.status === 1) {
+            alert("게시물이 성공적으로 등록되었습니다.");
+            document.getElementById("postContent").value = "";
+          } else {
+            alert("게시물 등록에 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("게시물 등록 중 오류 발생:", error);
+        }
+      }
+
+      async function fetchMembers() {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/club/members");
+          const data = await response.json();
+          if (data.status === 1) {
+            const memberList = document.getElementById("memberList");
+            memberList.innerHTML = "";
+            data.results.forEach((member) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${member.name}</td>
+                <td>${member.email}</td>
+                <td>${member.joinDate}</td>
+              `;
+              memberList.appendChild(row);
+            });
+          } else {
+            alert("회원 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("회원 정보 요청 중 오류 발생:", error);
+        }
+      }
+
+      async function fetchFeeStatus() {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/club/fees");
+          const data = await response.json();
+          if (data.status === 1) {
+            const feeStatusList = document.getElementById("feeStatusList");
+            feeStatusList.innerHTML = "";
+            data.results.forEach((member) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td><input type="checkbox" data-user-id="${member.id}" /></td>
+                <td>${member.name}</td>
+                <td>${member.paid ? "납부 완료" : "미납"}</td>
+                <td>
+                  ${
+                    member.paid
+                      ? "-"
+                      : `<button class="button" onclick="payFee('${member.id}')">납부</button>`
+                  }
+                </td>
+              `;
+              feeStatusList.appendChild(row);
+            });
+          } else {
+            alert("회비 상태를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("회비 상태 요청 중 오류 발생:", error);
+        }
+      }
+
+      async function payFee(memberId) {
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:3000/club/pay_fee/${memberId}`,
+            {
+              method: "POST",
+            }
+          );
+          const data = await response.json();
+          if (data.status === 1) {
+            alert("회비가 성공적으로 납부되었습니다.");
+            fetchFeeStatus();
+          } else {
+            alert("회비 납부에 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("회비 납부 중 오류 발생:", error);
+        }
+      }
+
+      function filterMembers() {
+        const searchInput = document
+          .getElementById("memberSearch")
+          .value.toLowerCase();
+        const rows = document.querySelectorAll("#memberList tr");
+
+        rows.forEach((row) => {
+          const cells = Array.from(row.children);
+          const rowText = cells
+            .map((cell) => cell.textContent.toLowerCase())
+            .join(" ");
+          row.style.display = rowText.includes(searchInput) ? "" : "none";
+        });
+      }
+
+      function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById("selectAll");
+        const checkboxes = document.querySelectorAll(
+          "#memberList input[type='checkbox']"
+        );
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = selectAllCheckbox.checked;
+        });
+      }
+
+      function toggleSelectAllFee() {
+        const selectAllCheckbox = document.getElementById("selectAllFee");
+        const checkboxes = document.querySelectorAll(
+          "#feeTableList input[type='checkbox']"
+        );
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = selectAllCheckbox.checked;
+        });
+      }
+
+      async function publishFees() {
+        const userName = localStorage.getItem("userName");
+        const clubName = localStorage.getItem("club");
+        const feeAmount = document.getElementById("feeAmount").value;
+
+        if (!feeAmount || feeAmount <= 0) {
+          alert("회비 금액을 올바르게 입력해주세요.");
+          return;
+        }
+
+        const selectedCheckboxes = document.querySelectorAll(
+          "#memberList input[type='checkbox']:checked"
+        );
+
+        if (selectedCheckboxes.length === 0) {
+          alert("회비를 발행할 회원을 선택해주세요.");
+          return;
+        }
+
+        const selectedIDs = Array.from(selectedCheckboxes).map(
+          (checkbox) => checkbox.dataset.userId
+        );
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:3000/crew/fee_publish",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ID: userName,
+                club_name: clubName,
+                IDs: selectedIDs,
+                fee: parseInt(feeAmount),
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            alert("회비 발행이 성공적으로 완료되었습니다.");
+            fetchFeeTable(); // 회비 테이블 갱신
+          } else if (data.status === 2) {
+            alert("이미 발행한 부원이 있습니다.");
+          } else {
+            alert(data.message || "회비 발행 중 오류가 발생했습니다.");
+          }
+        } catch (error) {
+          console.error("회비 발행 요청 중 오류 발생:", error);
+          alert("회비 발행 요청 중 문제가 발생했습니다.");
+        }
+      }
+
+      async function fetchCrewMembers() {
+        try {
+          const userName = localStorage.getItem("userName");
+          const clubName = localStorage.getItem("club");
+
+          if (!userName || !clubName) {
+            alert("사용자 정보 또는 동아리 정보가 없습니다.");
+            return;
+          }
+
+          const response = await fetch("http://127.0.0.1:3000/crew/crews", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ID: userName, club_name: clubName }),
+          });
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            const memberList = document.getElementById("memberList");
+            memberList.innerHTML = ""; // 기존 내용을 초기화
+
+            data.results.forEach((member) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td><input type="checkbox" data-user-id="${member.아이디}" /></td>
+                <td>${member.이름}</td>
+                <td>${member.이메일}</td>
+                <td>${member.직책}</td>
+                <td>${member.부서}</td>
+                <td>${member.단과대}</td>
+                <td>${member.전공}</td>
+                <td>${member.학년}학년</td>
+                <td>${member.학번}</td>
+                <td>${member.전화번호}</td>
+              `;
+              memberList.appendChild(row);
+            });
+          } else {
+            alert(data.message || "동아리원 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("동아리원 정보 요청 중 오류 발생:", error);
+          alert("동아리원 정보를 불러오는 중 문제가 발생했습니다.");
+        }
+      }
+
+      async function fetchFeeTable() {
+        const userName = localStorage.getItem("userName");
+        const clubName = localStorage.getItem("club");
+        const publicationDate =
+          document.getElementById("publicationDate").value || null;
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:3000/crew/fee_publish/table",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ID: userName,
+                club_name: clubName,
+                publication: publicationDate,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            const feeTableList = document.getElementById("feeTableList");
+            feeTableList.innerHTML = ""; // 기존 내용을 초기화
+
+            data.results.forEach((fee) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td><input type="checkbox" data-user-id="${fee.ID}" /></td>
+                <td>${fee.ID}</td>
+                <td>${fee.fee}원</td>
+                <td>${fee.payment === 0 ? "미납" : "납부 완료"}</td>
+                <td>${new Date(fee.publication).toLocaleDateString()}</td>
+              `;
+              feeTableList.appendChild(row);
+            });
+          } else if (data.status === 0) {
+            alert(data.message || "회비 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("회비 정보 요청 중 오류 발생:", error);
+          alert("회비 정보를 불러오는 중 문제가 발생했습니다.");
+        }
+      }
+
+      async function cancelFeePublication() {
+        const userName = localStorage.getItem("userName");
+        const clubName = localStorage.getItem("club");
+        const selectedCheckboxes = document.querySelectorAll(
+          "#feeTableList input[type='checkbox']:checked"
+        );
+
+        if (selectedCheckboxes.length === 0) {
+          alert("발행 취소할 회원을 선택해주세요.");
+          return;
+        }
+
+        const selectedIDs = [];
+        const publications = [];
+
+        selectedCheckboxes.forEach((checkbox) => {
+          const row = checkbox.closest("tr");
+          const userId = checkbox.dataset.userId;
+          const publicationDate = row
+            .querySelector("td:nth-child(5)")
+            .textContent.trim();
+          const formattedDate = publicationDate
+            .replace(/\.\s/g, "-")
+            .replace(/\.$/, ""); // YYYY-MM-DD 형식으로 변환
+          selectedIDs.push(userId);
+          publications.push(formattedDate);
+        });
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:3000/crew/fee_publish/cancel",
+            {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ID: userName,
+                club_name: clubName,
+                IDs: selectedIDs,
+                publications: publications,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            alert(data.message || "회비 발행이 성공적으로 취소되었습니다.");
+            fetchFeeTable(); // 테이블 갱신
+          } else {
+            alert(data.message || "발행 취소 중 오류가 발생했습니다.");
+          }
+        } catch (error) {
+          console.error("발행 취소 요청 중 오류 발생:", error);
+          alert("발행 취소 요청 중 문제가 발생했습니다.");
+        }
+      }
+
+      async function togglePaymentStatus() {
+        const selectedCheckboxes = document.querySelectorAll(
+          "#feeTableList input[type='checkbox']:checked"
+        );
+        const selectedIDs = Array.from(selectedCheckboxes).map(
+          (checkbox) => checkbox.dataset.userId
+        );
+
+        if (selectedIDs.length === 0) {
+          alert("납부 상태를 전환할 회원을 선택해주세요.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:3000/crew/toggle_payment",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ IDs: selectedIDs }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            alert("납부 상태가 성공적으로 전환되었습니다.");
+            fetchFeeTable(); // 테이블 갱신
+          } else {
+            alert(data.message || "납부 상태 전환 중 오류가 발생했습니다.");
+          }
+        } catch (error) {
+          console.error("납부 상태 전환 요청 중 오류 발생:", error);
+          alert("납부 상태 전환 요청 중 문제가 발생했습니다.");
+        }
+      }
+
+      function filterFeeTable() {
+        const searchInput = document
+          .getElementById("feeSearch")
+          .value.toLowerCase();
+        const rows = document.querySelectorAll("#feeTableList tr");
+
+        rows.forEach((row) => {
+          const nameCell = row.querySelector("td:nth-child(2)");
+          const nameText = nameCell ? nameCell.textContent.toLowerCase() : "";
+          row.style.display = nameText.includes(searchInput) ? "" : "none";
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchMembers();
+        fetchFeeStatus();
+        fetchCrewMembers(); // 동아리원 정보 가져오기
+        fetchFeeTable(); // 초기 로드 시 회비 정보 조회
+      });
+    </script>
+  </body>
+</html>
