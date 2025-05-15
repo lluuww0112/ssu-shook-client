@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>동아리 메뉴</title>
+    <link rel="stylesheet" href="./style.css" />
+    <style>
+      :root {
+        --primary: #4b4b8f;
+        --primary-light: #6c6ca5;
+        --secondary: #a8dadc;
+        --accent: #ff6b6b;
+        --background: #f8f9fa;
+        --text: #333;
+        --text-light: #666;
+        --white: #ffffff;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      body {
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--secondary);
+        background-image: 
+          linear-gradient(135deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+          linear-gradient(225deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+          linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+          linear-gradient(315deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%);
+        background-position: 10px 0, 10px 0, 0 0, 0 0;
+        background-size: 20px 20px;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      #my-club-list {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        left: -220px;
+        width: 220px;
+        height: auto;
+        max-height: 90vh;
+        background: var(--white);
+        box-shadow: none;
+        padding: 20px;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1001;
+        border-radius: 0 12px 12px 0;
+      }
+
+      #my-club-list::after {
+        content: '👉';
+        position: absolute;
+        right: -40px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        border-radius: 0 8px 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: all 0.4s ease;
+      }
+
+      #my-club-list:hover {
+        left: 0;
+        box-shadow: var(--shadow-hover);
+        overflow-y: auto;
+      }
+
+      #my-club-list .menu-content {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      #my-club-list:hover .menu-content {
+        opacity: 1;
+      }
+
+      #my-club-list h3 {
+        margin: 0 0 15px 0;
+        font-size: 16px;
+        color: var(--primary);
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 8px;
+      }
+
+      #my-club-list h3::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 40px;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 2px;
+      }
+
+      #my-club-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 30px 0;
+      }
+
+      #my-club-list li {
+        margin-bottom: 10px;
+        transition: transform 0.3s ease;
+        font-size: 14px;
+      }
+
+      #my-club-list li:hover {
+        transform: translateX(5px);
+      }
+
+      #my-club-list li a {
+        text-decoration: none;
+        color: var(--primary);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: rgba(75, 75, 143, 0.05);
+        transition: all 0.3s ease;
+      }
+
+      #my-club-list li a:hover {
+        background: rgba(75, 75, 143, 0.1);
+        color: var(--primary-light);
+      }
+
+      #content {
+        position: relative;
+        z-index: 1;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+        max-width: 1200px;
+        margin: 40px auto 0;
+        padding: 0 20px;
+      }
+
+      #content h2 {
+        text-align: center;
+        margin: 20px 0 30px;
+        color: var(--primary);
+        font-size: 32px;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 15px;
+      }
+
+      #content h2::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        border-radius: 2px;
+      }
+
+      #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 999;
+      }
+
+      #my-club-list:hover ~ #overlay {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      #content {
+        position: relative;
+        z-index: 1;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #my-club-list:hover ~ #content {
+        filter: blur(4px);
+        opacity: 0.7;
+      }
+
+      #ranking-summary {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 220px;
+        height: auto;
+        background: var(--white);
+        box-shadow: var(--shadow);
+        border-radius: 12px;
+        z-index: 1;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform-origin: bottom right;
+        cursor: pointer;
+      }
+
+      #ranking-summary.collapsed {
+        width: 50px;
+        height: 50px;
+        overflow: hidden;
+        cursor: pointer;
+        transform: scale(0.95);
+      }
+
+      #ranking-summary .ranking-content {
+        padding: 20px;
+        opacity: 1;
+        visibility: visible;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform: translateY(0);
+      }
+
+      #ranking-summary.collapsed .ranking-content {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+      }
+
+      #ranking-summary .toggle-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 5px;
+        font-size: 18px;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 2;
+      }
+
+      #ranking-summary.collapsed .toggle-btn {
+        top: 50%;
+        right: 50%;
+        transform: translate(50%, -50%);
+      }
+
+      #ranking-summary h3 {
+        margin: 0 0 15px 0;
+        font-size: 16px;
+        color: var(--primary);
+        text-align: center;
+        font-weight: 600;
+        padding-right: 20px;
+        transition: all 0.3s ease;
+        transform: translateY(0);
+      }
+
+      #ranking-summary.collapsed h3 {
+        transform: translateY(10px);
+      }
+
+      #ranking-summary ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #ranking-summary li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      #ranking-summary.collapsed li {
+        transform: translateX(-10px);
+        opacity: 0;
+      }
+
+      #ranking-summary li.first {
+        background: linear-gradient(135deg, #ffd700, #ffeeba);
+        color: #856404;
+        transition-delay: 0.1s;
+      }
+
+      #ranking-summary li.second {
+        background: linear-gradient(135deg, #e2e2e2, #ffffff);
+        color: #666;
+        transition-delay: 0.15s;
+      }
+
+      #ranking-summary li.third {
+        background: linear-gradient(135deg, #cd7f32, #deb887);
+        color: #7c4a03;
+        transition-delay: 0.2s;
+      }
+
+      #ranking-summary:not(.collapsed) {
+        transform: scale(1);
+        box-shadow: var(--shadow-hover);
+      }
+
+      #ranking-summary:not(.collapsed) .toggle-btn {
+        transform: rotate(180deg);
+      }
+
+      #my-club-list-expanded {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        padding: 20px;
+        margin: 0 auto;
+      }
+
+      .club-card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        flex: 1;
+        min-width: 300px;
+        max-width: calc(33.333% - 20px);
+      }
+
+      .club-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+      }
+
+      .club-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .club-card:hover::before {
+        transform: scaleX(1);
+      }
+
+      .club-card h3 {
+        margin: 0 0 15px 0;
+        font-size: 20px;
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .club-card p {
+        margin: 8px 0;
+        color: var(--text-light);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      #logoutButton {
+        width: 100%;
+        padding: 10px;
+        background: var(--accent);
+        color: var(--white);
+        border: none;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+      }
+
+      #logoutButton:hover {
+        background: #ff5252;
+        transform: translateY(-2px);
+      }
+
+      .welcome {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: var(--white);
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-weight: 500;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      @media (max-width: 1200px) {
+        .club-card {
+          min-width: 280px;
+          max-width: calc(50% - 15px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        #my-club-list-expanded {
+          gap: 20px;
+          padding: 15px;
+        }
+
+        .club-card {
+          min-width: 100%;
+          max-width: 100%;
+          padding: 20px;
+        }
+
+        .club-card h3 {
+          font-size: 18px;
+        }
+
+        .club-card p {
+          font-size: 14px;
+        }
+
+        #ranking-summary {
+          bottom: 20px;
+          right: 20px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        #my-club-list-expanded {
+          grid-template-columns: 1fr;
+          gap: 15px;
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="my-club-list">
+      <div class="menu-content">
+        <div class="welcome" id="welcomeMessage"></div>
+        <h3>내 동아리</h3>
+        <ul>
+          <!-- 동아리 목록이 여기에 동적으로 추가됩니다 -->
+        </ul>
+        <h3>기능 메뉴</h3>
+        <ul>
+          <li><a href="./clubs">✨ 맞춤형 동아리 추천 및 리뷰</a></li>
+          <li><a href="./activity">📌 동아리별 활동 내역</a></li>
+          <li><a href="./NewClub">🆕 신규 동아리 개설 인원 모집</a></li>
+          <li><a href="./recruiting">📣 동아리 모집 공고</a></li>
+        </ul>
+        <button id="logoutButton">로그아웃</button>
+      </div>
+    </div>
+
+    <div id="overlay"></div>
+    <!-- 어두운 배경 오버레이 -->
+
+    <div id="content">
+      <h2>내 동아리 리스트</h2>
+      <div id="my-club-list-expanded">
+        <!-- 가입 중인 동아리 카드가 여기에 동적으로 추가됩니다 -->
+      </div>
+    </div>
+
+    <div id="ranking-summary" class="collapsed" onclick="navigateToRanking()">
+      <button class="toggle-btn" onclick="toggleRanking(event)">🏆</button>
+      <div class="ranking-content">
+        <h3>동아리 랭킹</h3>
+        <ul id="rankingList">
+          <!-- 상위 5개 랭킹이 동적으로 추가됩니다 -->
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      const userName = localStorage.getItem("userName");
+      if (userName) {
+        document.getElementById(
+          "welcomeMessage"
+        ).textContent = `👋 ${userName}님 환영합니다!`;
+      }
+
+      async function fetchMyClubs() {
+        try {
+          const userName = localStorage.getItem("userName");
+          const response = await fetch(
+            `http://127.0.0.1:3000/user/get_my_club/${userName}`
+          );
+          const data = await response.json();
+
+          if (data.status === 1) {
+            const myClubList = document.querySelector("#my-club-list ul");
+            const myClubListExpanded = document.getElementById(
+              "my-club-list-expanded"
+            );
+            myClubList.innerHTML = ""; // 기존 내용을 초기화
+            myClubListExpanded.innerHTML = ""; // 확장된 리스트 초기화
+
+            data.results.forEach((club) => {
+              // 슬라이드 메뉴에 추가
+              const li = document.createElement("li");
+              li.innerHTML = `
+                <strong>${club.club_name}</strong><br>
+                <span style="font-size: 14px; color: gray;">${club.category}</span>
+              `;
+              li.style.cursor = "pointer";
+              li.addEventListener("click", () => {
+                localStorage.setItem("club", club.club_name);
+                window.location.href = "./clubs/club";
+              });
+              myClubList.appendChild(li);
+
+              // 확장된 리스트에 추가
+              const clubCard = document.createElement("div");
+              clubCard.className = "club-card";
+              clubCard.innerHTML = `
+                <h3>${club.club_name}</h3>
+                <p>분과: ${club.category}</p>
+                <p>활동 횟수: ${club.activity}</p>
+                <p>평점: ${club.rating}</p>
+              `;
+              
+              // 카드 클릭 이벤트
+              clubCard.addEventListener("click", () => {
+                localStorage.setItem("club", club.club_name);
+                window.location.href = "./clubs/club";
+              });
+              
+              myClubListExpanded.appendChild(clubCard);
+            });
+          } else {
+            alert("내 동아리 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("내 동아리 정보 요청 중 오류 발생:", error);
+          alert("내 동아리 정보를 불러오는 중 문제가 발생했습니다.");
+        }
+      }
+
+      // 랭킹 토글 기능
+      const rankingSummary = document.getElementById('ranking-summary');
+      const toggleBtn = rankingSummary.querySelector('.toggle-btn');
+
+      function toggleRanking(e) {
+        e.stopPropagation();
+        rankingSummary.classList.toggle('collapsed');
+      }
+
+      // 랭킹 페이지로 이동
+      function navigateToRanking() {
+        if (!rankingSummary.classList.contains('collapsed')) {
+          window.location.href = "./ranking";
+        }
+      }
+
+      // 랭킹 섹션 외부 클릭 시 접기
+      document.addEventListener('click', (e) => {
+        if (!rankingSummary.contains(e.target)) {
+          rankingSummary.classList.add('collapsed');
+        }
+      });
+
+      async function fetchTopRanking() {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/user/get_ranking");
+          const data = await response.json();
+
+          if (data.status === 1) {
+            const rankingList = document.getElementById("rankingList");
+            rankingList.innerHTML = "";
+
+            data.results.slice(0, 5).forEach((club, index) => {
+              const li = document.createElement("li");
+              li.className = index === 0 ? "first" : index === 1 ? "second" : index === 2 ? "third" : "";
+              li.innerHTML = `
+                <span>${club.ranking}위</span>
+                <span>${club.club_name}</span>
+              `;
+              li.style.cursor = "pointer";
+              li.addEventListener('click', (e) => {
+                e.stopPropagation();
+                localStorage.setItem("club", club.club_name);
+                window.location.href = "./clubs/club";
+              });
+              rankingList.appendChild(li);
+            });
+          } else {
+            console.error("랭킹 데이터를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("Error fetching ranking data:", error);
+        }
+      }
+
+      document.getElementById("logoutButton").addEventListener("click", () => {
+        localStorage.clear(); // localStorage 초기화
+        window.location.href = "./"; // 메인 페이지로 이동
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchMyClubs();
+        fetchTopRanking(); // 상위 랭킹 데이터 가져오기
+      });
+    </script>
+  </body>
+</html>

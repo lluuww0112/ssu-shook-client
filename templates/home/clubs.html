@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>맞춤형 동아리 추천</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #a8dadc;
+        background-image: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.15) 20%,
+          transparent 20%
+        );
+        background-size: 30px 30px;
+        margin: 0;
+        padding: 30px;
+      }
+
+      /* 슬라이드 메뉴 스타일 */
+      #my-club-list {
+        position: fixed;
+        top: 0;
+        left: -250px; /* 숨김 상태 */
+        width: 250px;
+        height: 100%;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        overflow-y: auto;
+        transition: left 0.3s ease;
+        z-index: 1001;
+      }
+
+      #my-club-list:hover {
+        left: 0; /* 마우스를 올렸을 때 표시 */
+      }
+
+      #my-club-list h3 {
+        margin-top: 0;
+        font-size: 18px;
+        color: #4b4b8f;
+      }
+
+      #my-club-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #my-club-list li {
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #333;
+      }
+
+      #my-club-list li strong {
+        font-size: 16px;
+        color: #6c5ce7;
+      }
+
+      #content {
+        position: relative;
+        z-index: 1;
+        transition: filter 0.3s ease;
+      }
+
+      #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.825); /* 어두운 배경 */
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 1000;
+      }
+
+      #my-club-list:hover ~ #overlay {
+        opacity: 1;
+        visibility: visible; /* 슬라이드 메뉴가 열릴 때 오버레이 표시 */
+      }
+
+      #my-club-list:hover ~ #content {
+        filter: none; /* 맞춤형 동아리 섹션은 배경이 바뀌지 않도록 */
+      }
+
+      .page {
+        max-width: 800px;
+        margin: auto;
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      #club-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px; /* 카드 간격 */
+        justify-content: center;
+      }
+
+      .club {
+        flex: 1 1 calc(33.333% - 20px); /* 3열 레이아웃 */
+        max-width: calc(33.333% - 20px);
+        box-sizing: border-box;
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #e0e7ff, #f5f4ff);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      @media (max-width: 768px) {
+        .club {
+          flex: 1 1 calc(50% - 20px); /* 2열 레이아웃 (화면이 좁을 때) */
+          max-width: calc(50% - 20px);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .club {
+          flex: 1 1 100%; /* 1열 레이아웃 (화면이 더 좁을 때) */
+          max-width: 100%;
+        }
+      }
+
+      .club:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .club h3 {
+        margin-bottom: 10px;
+        font-size: 20px;
+        color: #4b4b8f;
+        font-weight: bold;
+      }
+
+      .club p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #333;
+      }
+
+      .club p span {
+        font-weight: bold;
+        color: #6c5ce7;
+      }
+
+      .avg-rating {
+        font-size: 15px;
+        color: #ff9800;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+
+      textarea {
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+      }
+
+      .stars span {
+        font-size: 24px;
+        cursor: pointer;
+        color: lightgray;
+      }
+
+      .stars span.active {
+        color: gold;
+      }
+
+      button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        background-color: #6c5ce7;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 15px;
+      }
+
+      .review-box {
+        margin-top: 15px;
+      }
+
+      .review {
+        background: #f0f0f0;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+
+      .review-footer {
+        font-size: 13px;
+        color: gray;
+        margin-top: 5px;
+      }
+
+      .review-actions {
+        margin-top: 8px;
+        display: flex;
+        gap: 12px;
+      }
+
+      .review-actions span {
+        font-size: 14px;
+        color: #6c5ce7;
+        cursor: pointer;
+      }
+
+      .back-button {
+        display: block;
+        margin: 40px auto 0;
+        padding: 10px 20px;
+        background-color: #6c5ce7;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      .error-message {
+        color: red;
+        font-size: 14px;
+        margin-top: 8px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="my-club-list">
+      <h3>내 동아리</h3>
+      <ul>
+        <!-- 동아리 목록이 여기에 동적으로 추가됩니다 -->
+      </ul>
+      <button
+        id="logoutButton"
+        style="
+          margin-top: 20px;
+          padding: 10px 20px;
+          background-color: #ff6b6b;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          width: 80%;
+        "
+      >
+        로그아웃
+      </button>
+    </div>
+
+    <div id="overlay"></div>
+    <!-- 어두운 배경 오버레이 -->
+
+    <div id="content">
+      <div class="page">
+        <h2>맞춤형 동아리 추천</h2>
+        <input
+          type="search"
+          id="search-bar"
+          placeholder="동아리 이름 또는 분과를 검색하세요"
+          oninput="filterClubs()"
+          style="
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+          "
+        />
+        <div id="club-list">
+          <!-- 동아리 목록이 여기에 동적으로 추가됩니다 -->
+        </div>
+        <button class="back-button" onclick="goBack()">⬅️ 돌아가기</button>
+      </div>
+    </div>
+
+    <script>
+      let allClubs = []; // 모든 동아리 데이터를 저장
+
+      async function fetchClubs() {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/user/get_club", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ club_name: null }),
+          });
+
+          const data = await response.json();
+
+          if (data.status === 1) {
+            allClubs = data.results; // 데이터를 저장
+            renderClubList(allClubs);
+          } else {
+            alert("동아리 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("동아리 정보 요청 중 오류 발생:", error);
+          alert("동아리 정보를 불러오는 중 문제가 발생했습니다.");
+        }
+      }
+
+      async function fetchMyClubs() {
+        try {
+          const userName = localStorage.getItem("userName");
+          const response = await fetch(
+            `http://127.0.0.1:3000/user/get_my_club/${userName}`
+          );
+          const data = await response.json();
+
+          if (data.status === 1) {
+            const myClubList = document.querySelector("#my-club-list ul");
+            myClubList.innerHTML = ""; // 기존 내용을 초기화
+
+            data.results.forEach((club) => {
+              const li = document.createElement("li");
+              li.innerHTML = `
+                <strong>${club.club_name}</strong><br>
+                <span style="font-size: 14px; color: gray;">${club.category}</span>
+              `;
+              li.style.cursor = "pointer"; // 클릭 가능하도록 스타일 추가
+              li.addEventListener("click", () => {
+                localStorage.setItem("club", club.club_name); // 클릭한 동아리 이름 저장
+                window.location.href = "./clubs/club"; // 페이지 전환
+              });
+              myClubList.appendChild(li);
+            });
+          } else {
+            alert("내 동아리 정보를 불러오는 데 실패했습니다.");
+          }
+        } catch (error) {
+          console.error("내 동아리 정보 요청 중 오류 발생:", error);
+          alert("내 동아리 정보를 불러오는 중 문제가 발생했습니다.");
+        }
+      }
+
+      function renderClubList(clubs) {
+        const clubList = document.getElementById("club-list");
+        clubList.innerHTML = ""; // 기존 내용을 초기화
+
+        clubs.forEach((club) => {
+          const clubElement = document.createElement("div");
+          clubElement.className = "club";
+          clubElement.innerHTML = `
+            <h3>📌 ${club.club_name}</h3>
+            <p><span>${club.category}</span></p>
+            <p>활동 횟수: <span>${club.activity}</span></p>
+            <p>평점: <span>${club.rating}</span></p>
+            <p>점수: <span>${club.score}</span></p>
+          `;
+          clubElement.style.cursor = "pointer"; // 클릭 가능하도록 스타일 추가
+          clubElement.addEventListener("click", () => {
+            localStorage.setItem("club", club.club_name); // 클릭한 동아리 이름 저장
+            window.location.href = "./clubs/club"; // 페이지 전환
+          });
+          clubList.appendChild(clubElement);
+        });
+      }
+
+      function filterClubs() {
+        const query = document.getElementById("search-bar").value.toLowerCase();
+        const filteredClubs = allClubs.filter(
+          (club) =>
+            club.club_name.toLowerCase().includes(query) ||
+            club.category.toLowerCase().includes(query)
+        );
+        renderClubList(filteredClubs);
+      }
+
+      function goBack() {
+        window.history.back();
+      }
+
+      // 로그아웃 버튼 이벤트 추가
+      document.getElementById("logoutButton").addEventListener("click", () => {
+        localStorage.clear(); // localStorage 초기화
+        window.location.href = "./"; // 메인 페이지로 이동
+      });
+
+      // 페이지 로드 시 동아리 목록 및 내 동아리 목록 가져오기
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchClubs();
+        fetchMyClubs();
+      });
+    </script>
+  </body>
+</html>

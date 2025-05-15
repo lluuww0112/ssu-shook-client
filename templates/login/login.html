@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SSU : 슉!</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #a8dadc;
+        background-image: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.15) 20%,
+          transparent 20%
+        );
+        background-size: 30px 30px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 500px;
+        margin: 100px auto;
+        padding: 50px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        animation: fadeIn 1s ease-in-out;
+      }
+
+      .title {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        color: #48b8d0;
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 600;
+      }
+
+      p {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 15px;
+      }
+
+      .input-group {
+        display: flex;
+        align-items: center;
+        background: #f1f1f1;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 15px;
+      }
+
+      .input-group span {
+        margin-right: 10px;
+        font-size: 18px;
+      }
+
+      .input-group input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 16px;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .login-button {
+        background-color: #6c5ce7;
+        color: white;
+        margin-top: 10px;
+      }
+
+      .login-button:hover {
+        background-color: #5947d4;
+      }
+
+      .signup-button {
+        background-color: #ff7f50;
+        color: white;
+        margin-top: 10px;
+      }
+
+      .signup-button:hover {
+        background-color: #ff6347;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title">SSU - SHOOK</div>
+      <h1>SSU : 슈슉!</h1>
+      <p>숭실대 동아리의 모든 것</p>
+
+      <div class="input-group">
+        <span>📧</span>
+        <input type="text" id="email" placeholder="you@example.com" required />
+      </div>
+
+      <div class="input-group">
+        <span>🔒</span>
+        <input type="password" id="password" placeholder="Password" />
+      </div>
+
+      <button class="login-button" onclick="login()">로그인</button>
+      <button class="signup-button" onclick="signup()">회원가입</button>
+    </div>
+
+    <script>
+      async function login() {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!email || !password) {
+          alert("이메일과 비밀번호를 모두 입력해주세요!");
+          return;
+        }
+
+        try {
+          const response = await fetch("http://127.0.0.1:3000/user/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ID: email,
+              password: password,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.status === 1) {
+            alert(result.message || "로그인 성공!");
+            localStorage.setItem("userName", email.split("@")[0]);
+            window.location.href = "./home";
+          } else {
+            alert(result.message || "로그인 실패. 다시 시도해주세요.");
+          }
+        } catch (error) {
+          console.error("로그인 요청 중 오류 발생:", error);
+          alert("로그인 중 문제가 발생했습니다. 나중에 다시 시도해주세요.");
+        }
+      }
+
+      function signup() {
+        window.location.href = "./regist";
+      }
+    </script>
+  </body>
+</html>
