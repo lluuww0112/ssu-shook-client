@@ -60,8 +60,9 @@ def Club_activity():
 def Club_management():
     return render_template("./club/management.html")
 
-
-
+@app.route("/user/get_posts")
+def User_get_posts():
+    return render_template("./user/get_posts.html")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=3001, debug=True)

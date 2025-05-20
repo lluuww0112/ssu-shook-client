@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>게시글 목록 조회</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            min-height: 100vh;
+        }
+        .page {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 60px;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        .form-row input, .form-row select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+        .form-row button {
+            background-color: #6c5ce7;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .form-row button:hover {
+            background-color: #4b44c2;
+        }
+        .post {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f9f9ff;
+        }
+        .post h3 {
+            margin: 0 0 10px;
+            font-size: 17px;
+        }
+        .club-name {
+            font-weight: bold;
+            color: #6c5ce7;
+            margin-bottom: 8px;
+        }
+        .post-meta {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .post-content {
+            margin-bottom: 8px;
+        }
+        .back-button {
+            display: block;
+            margin: 30px auto 0;
+            background-color: #6c5ce7;
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background-color: #4b44c2;
+        }
+        .message {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 280px;
+            max-width: 90vw;
+            background: #fff3f3;
+            color: #e17055;
+            border: 1px solid #ffb3b3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 16px 40px 16px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            z-index: 9999;
+            text-align: left;
+            display: none;
+        }
+        .message.show {
+            display: block;
+        }
+        .message .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 20px;
+            color: #e17055;
+            background: none;
+            border: none;
+            cursor: pointer;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+<div id="message" class="message" style="display:none;"></div>
+<div class="page">
+    <h2>📋 게시글 목록 조회</h2>
+    <form id="searchForm" class="form-row">
+        <input type="text" id="clubName" placeholder="동아리명 (예: 빛누리)" />
+        <select id="postType">
+            <option value="">게시글 타입 전체</option>
+            <option value="activity">동아리 활동</option>
+            <option value="recruiting">리크루팅</option>
+            <option value="union">연합활동</option>
+        </select>
+        <button type="submit">조회</button>
+    </form>
+    <form id="singlePostForm" class="form-row" style="margin-bottom:20px;">
+        <input type="text" id="singlePostID" placeholder="게시글 ID 입력 (복사해서 붙여넣기)" style="width:320px;" />
+        <button type="submit">특정 게시글 조회</button>
+    </form>
+    <div id="singlePostResult"></div>
+    <div id="postList"></div>
+    <button class="back-button" onclick="goBack()">⬅️ 돌아가기</button>
+</div>
+<script>
+function goBack() {
+    if (document.referrer) {
+        history.back();
+    } else {
+        location.href = "/home";
+    }
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+}
+
+function showMessage(msg) {
+    const messageDiv = document.getElementById("message");
+    messageDiv.innerHTML = `${msg}<button class='close-btn' onclick='hideMessage()'>&times;</button>`;
+    messageDiv.classList.add("show");
+    messageDiv.style.display = "block";
+}
+
+function hideMessage() {
+    const messageDiv = document.getElementById("message");
+    messageDiv.classList.remove("show");
+    messageDiv.style.display = "none";
+}
+
+async function fetchPosts(clubName, postType) {
+    document.getElementById("postList").innerHTML = "조회 중...";
+    try {
+        const res = await fetch("/user/get_posts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                club_name: clubName || null,
+                post_type: postType || null
+            })
+        });
+        const data = await res.json();
+        if (data.status === 1) {
+            if (Array.isArray(data.results)) {
+                renderPosts(data.results);
+                if (data.results.length === 0) {
+                    showMessage("게시글이 조회되지 않았습니다.");
+                }
+            } else if (typeof data.results === "string" && data.results === "게시글이 조회되지 않았습니다") {
+                document.getElementById("postList").innerHTML = "";
+                showMessage(data.results);
+            } else {
+                // 메시지 유지 (hideMessage 호출하지 않음)
+            }
+        } else {
+            document.getElementById("postList").innerHTML = "";
+            showMessage(data.message || "게시글을 조회하는 도중 오류가 발생했습니다");
+        }
+    } catch (e) {
+        document.getElementById("postList").innerHTML = "";
+        showMessage("게시글을 조회하는 도중 오류가 발생했습니다");
+    }
+}
+
+function renderPosts(posts) {
+    const postList = document.getElementById("postList");
+    postList.innerHTML = "";
+    posts.sort((a, b) => new Date(b.added) - new Date(a.added)); // 내림차순 정렬
+    posts.forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post";
+        div.innerHTML = `
+            <div class="club-name">${post.club_name}</div>
+            <h3>${post.title}</h3>
+            <div class="post-meta">
+                <span>타입: ${post.post_type}</span> |
+                <span>게시일: ${post.added ? formatDate(post.added) : '-'}</span> |
+                <span>수정일: ${post.updated ? formatDate(post.updated) : '-'}</span>
+            </div>
+            <div class="post-content">${post.text}</div>
+            <div style="font-size:12px;color:#bbb;">ID: ${post.post_ID}</div>
+        `;
+        postList.appendChild(div);
+    });
+}
+
+function renderSinglePost(post) {
+    const container = document.getElementById("singlePostResult");
+    if (!post) {
+        container.innerHTML = "";
+        return;
+    }
+    let html = `<div class='post'>`;
+    html += `<div class='club-name'>${post.club_name}</div>`;
+    html += `<h3>${post.title}</h3>`;
+    html += `<div class='post-meta'>`;
+    html += `<span>타입: ${post.post_type}</span> | <span>게시일: ${post.added ? formatDate(post.added) : '-'}</span> | <span>수정일: ${post.updated ? formatDate(post.updated) : '-'}</span>`;
+    html += `</div>`;
+    html += `<div class='post-content'>${post.text}</div>`;
+    if (post.post_type === "recruiting") {
+        html += `<div>모집 인원: ${post.capacity}</div>`;
+        html += `<div>지원자 수: ${post.applicants}</div>`;
+        html += `<div>모집 시작일: ${post.start_date ? formatDate(post.start_date) : '-'}</div>`;
+        html += `<div>모집 종료일: ${post.end_date ? formatDate(post.end_date) : '-'}</div>`;
+    } else if (post.post_type === "activity") {
+        html += `<div>활동일: ${post.activity_day ? formatDate(post.activity_day) : '-'}</div>`;
+        html += `<div>활동사진: ${post.activity_image ? `<img src='${post.activity_image}' alt='활동사진' style='max-width:200px;'/>` : '없음'}</div>`;
+    } else if (post.post_type === "union") {
+        html += `<div>연합활동 지원 동아리 수: ${post.applicants_club}</div>`;
+        html += `<div>모집 시작일: ${post.start_date ? formatDate(post.start_date) : '-'}</div>`;
+        html += `<div>모집 종료일: ${post.end_date ? formatDate(post.end_date) : '-'}</div>`;
+    }
+    html += `<div style='font-size:12px;color:#bbb;'>ID: ${post.post_ID}</div>`;
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+async function fetchSinglePost(postID) {
+    document.getElementById("singlePostResult").innerHTML = "조회 중...";
+    try {
+        const res = await fetch(`/user/get_posts/${postID}`);
+        const data = await res.json();
+        if (data.status === 1 && data.result) {
+            renderSinglePost(data.result);
+        } else {
+            document.getElementById("singlePostResult").innerHTML = "게시글을 조회하는 도중 오류가 발생했습니다.";
+        }
+    } catch (e) {
+        document.getElementById("singlePostResult").innerHTML = "게시글을 조회하는 도중 오류가 발생했습니다.";
+    }
+}
+
+document.getElementById("searchForm").onsubmit = function(e) {
+    e.preventDefault();
+    const clubName = document.getElementById("clubName").value.trim();
+    const postType = document.getElementById("postType").value.trim();
+    fetchPosts(clubName, postType);
+};
+
+document.getElementById("singlePostForm").onsubmit = function(e) {
+    e.preventDefault();
+    const postID = document.getElementById("singlePostID").value.trim();
+    if (!postID) {
+        showMessage("게시글 ID를 입력하세요.");
+        return;
+    }
+    fetchSinglePost(postID);
+};
+</script>
+</body>
+</html>
